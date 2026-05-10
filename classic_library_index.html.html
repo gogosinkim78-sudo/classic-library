@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>고전 서재</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F4EE;--bg2:#EDEAE2;--bg3:#FFFFFF;
+  --text:#1A1814;--text2:#5A5650;--text3:#9A9690;
+  --border:#D8D4CC;--border2:#B8B0A4;
+  --accent:#2A2018;--gold:#B8973A;
+  --sidebar:240px;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#141210;--bg2:#1C1814;--bg3:#22201C;--text:#F0EDE6;--text2:#A09890;--text3:#6A6460;--border:#302820;--border2:#483A28}
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Neo',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden;font-size:14px}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;overflow-y:auto}
+.logo{padding:1.5rem 1.25rem 1rem;border-bottom:1px solid var(--border)}
+.logo h1{font-size:1.2rem;font-weight:700;letter-spacing:-.02em}
+.logo p{font-size:11px;color:var(--text3);margin-top:3px}
+.nav-sec-title{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);padding:.75rem 1.25rem .25rem;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:9px;padding:.55rem 1.25rem;font-size:13px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .15s;user-select:none}
+.nav-item:hover{color:var(--text);background:rgba(0,0,0,.04)}
+.nav-item.active{color:var(--accent);border-left-color:var(--gold);background:var(--bg3);font-weight:600}
+.nav-item svg{width:15px;height:15px;flex-shrink:0}
+.nav-hr{height:1px;background:var(--border);margin:.5rem 1.25rem}
+.sidebar-foot{margin-top:auto;padding:1rem 1.25rem;font-size:11px;color:var(--text3);border-top:1px solid var(--border)}
+
+/* MAIN */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:90;background:var(--bg);border-bottom:1px solid var(--border);padding:.75rem 1.75rem;display:flex;align-items:center;gap:1rem}
+.topbar-title{font-size:1rem;font-weight:600;flex:1;color:var(--text2)}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text3);pointer-events:none}
+.search-input{padding:7px 12px 7px 30px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);color:var(--text);font-size:13px;outline:none;width:240px;transition:border-color .2s}
+.search-input:focus{border-color:var(--border2)}
+
+/* PANELS */
+.panel{display:none;padding:1.5rem 1.75rem 3rem;animation:fi .2s ease}
+.panel.active{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+/* FILTER BAR */
+.filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem;align-items:center}
+.filter-label{font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-right:2px}
+.fbtn{padding:4px 12px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all .14s;white-space:nowrap}
+.fbtn:hover{border-color:var(--border2);color:var(--text)}
+.fbtn.active{background:var(--accent);color:#F7F4EE;border-color:var(--accent)}
+.results-info{font-size:12px;color:var(--text3);margin-bottom:.875rem}
+
+/* BOOK GRID */
+.book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:1rem}
+
+/* BOOK CARD */
+.book-card{border-radius:10px;overflow:hidden;cursor:pointer;border:1px solid var(--border);background:var(--bg3);transition:transform .18s,box-shadow .18s,border-color .18s}
+.book-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.1);border-color:var(--border2)}
+.book-cover{width:100%;aspect-ratio:2/3;position:relative;overflow:hidden;display:flex;align-items:flex-end}
+.cover-art{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cover-art svg{width:100%;height:100%}
+.cover-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.15) 55%,transparent 100%)}
+.cover-title{position:relative;z-index:2;padding:.6rem .55rem .55rem;font-size:12.5px;font-weight:700;color:#fff;line-height:1.3;text-shadow:0 1px 5px rgba(0,0,0,.6)}
+.card-body{padding:.55rem .7rem .7rem}
+.card-author{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.3rem}
+.card-genre{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;background:var(--bg2);color:var(--text3);border:1px solid var(--border);margin-bottom:.35rem}
+.card-stars{font-size:11px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex;animation:fi .2s ease}
+.modal{background:var(--bg3);border-radius:14px;max-width:680px;width:100%;max-height:88vh;overflow:hidden;display:flex;border:1px solid var(--border2);position:relative}
+.modal-art{width:210px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg2)}
+.modal-art svg{width:100%;height:100%;display:block}
+.modal-body{flex:1;overflow-y:auto;padding:1.75rem 1.5rem}
+.modal-close{position:absolute;top:.75rem;right:.75rem;width:30px;height:30px;border-radius:50%;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:17px;z-index:10;transition:background .15s;line-height:1}
+.modal-close:hover{background:var(--bg2)}
+.modal-genre{display:inline-block;font-size:11px;padding:3px 10px;border-radius:99px;background:var(--bg2);color:var(--text3);border:1px solid var(--border);margin-bottom:.6rem}
+.modal-title{font-size:1.5rem;font-weight:700;line-height:1.25;margin-bottom:.3rem;letter-spacing:-.02em}
+.modal-author{font-size:13px;color:var(--text2);margin-bottom:.875rem}
+.modal-stars{font-size:18px;margin-bottom:1rem}
+.modal-meta-row{display:flex;gap:1.25rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.meta-item .val{font-size:14px;font-weight:600}
+.meta-item .lbl{font-size:10px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-top:1px}
+.sec-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:.4rem;font-weight:600}
+.modal-summary{font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:1rem}
+.kw-list{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:1rem}
+.kw{font-size:11.5px;padding:3px 9px;border-radius:6px;background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+.paint-credit{font-size:11px;color:var(--text3);font-style:italic;margin-top:.875rem;padding-top:.75rem;border-top:1px solid var(--border)}
+
+/* COMMUNITY */
+.comm-header{margin-bottom:1.5rem}
+.comm-header h2{font-size:1.3rem;font-weight:700;margin-bottom:.3rem}
+.comm-header p{font-size:13px;color:var(--text2)}
+.post-list{display:flex;flex-direction:column;gap:.75rem;max-width:640px}
+.post-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem 1.125rem;cursor:pointer;transition:border-color .15s}
+.post-card:hover{border-color:var(--border2)}
+.post-meta{display:flex;align-items:center;gap:.4rem;margin-bottom:.4rem}
+.badge{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600}
+.badge.review{background:#EEF4E8;color:#3A6020;border:1px solid #C0D8A0}
+.badge.talk{background:#EDE8F8;color:#4A30A0;border:1px solid #C0B0E8}
+.badge.column{background:#F8EEE0;color:#8A4A10;border:1px solid #E0C090}
+.badge.reading{background:#E8F4F8;color:#1A5A80;border:1px solid #90C8E0}
+.post-date{font-size:11px;color:var(--text3);margin-left:auto}
+.post-title{font-size:14px;font-weight:600;margin-bottom:.3rem}
+.post-excerpt{font-size:12.5px;color:var(--text2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.post-foot{display:flex;gap:.875rem;margin-top:.5rem;font-size:12px;color:var(--text3)}
+.empty{text-align:center;padding:4rem 1rem;color:var(--text3)}
+.empty svg{width:40px;height:40px;margin:0 auto .75rem;display:block;opacity:.4}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">
+    <h1>📚 고전 서재</h1>
+    <p>나만의 큐레이션 공간</p>
+  </div>
+  <div class="nav-sec-title">서재</div>
+  <div class="nav-item active" data-panel="books">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
+    도서 큐레이션
+  </div>
+  <div class="nav-item" data-panel="recommended">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/></svg>
+    이달의 추천
+  </div>
+  <div class="nav-hr"></div>
+  <div class="nav-sec-title">커뮤니티</div>
+  <div class="nav-item" data-panel="reviews">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.127 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
+    독서 후기
+  </div>
+  <div class="nav-item" data-panel="talk">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155"/></svg>
+    잡담 · 수다
+  </div>
+  <div class="nav-item" data-panel="column">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+    에세이 · 칼럼
+  </div>
+  <div class="nav-item" data-panel="readinglist">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+    읽고 싶은 책
+  </div>
+  <div class="nav-hr"></div>
+  <div class="nav-sec-title">탐색</div>
+  <div class="nav-item" data-panel="genres">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/></svg>
+    장르별 탐색
+  </div>
+  <div class="nav-item" data-panel="authors">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+    작가별 탐색
+  </div>
+  <div class="sidebar-foot">총 <span id="totalCount">0</span>권 수록</div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="panelTitle">도서 큐레이션</div>
+    <div class="search-wrap">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
+      <input class="search-input" id="searchInput" type="text" placeholder="제목, 작가, 키워드 검색..."/>
+    </div>
+  </div>
+
+  <div class="panel active" id="panel-books">
+    <div class="filter-bar" id="authorBar"></div>
+    <div class="filter-bar" id="genreBar"></div>
+    <div class="results-info" id="resultsInfo"></div>
+    <div class="book-grid" id="bookGrid"></div>
+    <div class="empty" id="emptyState" style="display:none">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
+      <p>검색 결과가 없습니다</p>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-recommended">
+    <div class="comm-header"><h2>⭐ 이달의 추천</h2><p>편집부가 엄선한 5월의 고전 명작 12선</p></div>
+    <div class="book-grid" id="recGrid"></div>
+  </div>
+
+  <div class="panel" id="panel-reviews">
+    <div class="comm-header"><h2>독서 후기</h2><p>책을 읽고 난 감상을 나눠보세요</p></div>
+    <div class="post-list" id="reviewList"></div>
+  </div>
+
+  <div class="panel" id="panel-talk">
+    <div class="comm-header"><h2>잡담 · 수다</h2><p>책 얘기가 아니어도 좋아요. 독서에 얽힌 일상 이야기를 나눠요.</p></div>
+    <div class="post-list" id="talkList"></div>
+  </div>
+
+  <div class="panel" id="panel-column">
+    <div class="comm-header"><h2>에세이 · 칼럼</h2><p>문학에 대한 깊은 생각을 글로 담아보세요</p></div>
+    <div class="post-list" id="columnList"></div>
+  </div>
+
+  <div class="panel" id="panel-readinglist">
+    <div class="comm-header"><h2>읽고 싶은 책</h2><p>언젠가 꼭 읽고 싶은 책 목록을 함께 나눠요</p></div>
+    <div class="post-list" id="readingList"></div>
+  </div>
+
+  <div class="panel" id="panel-genres">
+    <div class="comm-header"><h2>장르별 탐색</h2><p>관심 장르를 골라 해당 도서를 모아 보세요</p></div>
+    <div class="filter-bar" id="genreNavBar" style="margin-bottom:1rem"></div>
+    <div class="book-grid" id="genreGrid"></div>
+  </div>
+
+  <div class="panel" id="panel-authors">
+    <div class="comm-header"><h2>작가별 탐색</h2><p>좋아하는 작가의 작품을 한눈에 볼 수 있어요</p></div>
+    <div class="filter-bar" id="authorNavBar" style="margin-bottom:1rem"></div>
+    <div class="book-grid" id="authorGrid"></div>
+  </div>
+</main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-art" id="modalArt"></div>
+    <div class="modal-body" id="modalBody">
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── 명화 SVG 팔레트 (외부 이미지 없이 CSS 그라데이션으로 표현) ───
+const COVERS = [
+  {name:"모네 — 수련",painter:"클로드 모네",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="c0a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4a8fa8"/><stop offset="100%" stop-color="#2d5f70"/></linearGradient></defs><rect width="200" height="300" fill="url(#c0a)"/><ellipse cx="60" cy="200" rx="40" ry="12" fill="#5aaa7a" opacity=".7"/><ellipse cx="140" cy="240" rx="35" ry="10" fill="#4a9060" opacity=".6"/><ellipse cx="100" cy="170" rx="28" ry="8" fill="#6ab88a" opacity=".5"/><circle cx="65" cy="196" r="6" fill="#e8a0b0" opacity=".8"/><circle cx="138" cy="236" r="5" fill="#f0c0c8" opacity=".7"/><circle cx="100" cy="165" r="4" fill="#e8a0b0" opacity=".6"/><rect x="0" y="0" width="200" height="120" fill="#6aacc0" opacity=".3"/></svg>`},
+  {name:"반 고흐 — 별밤",painter:"빈센트 반 고흐",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#1a2a4a"/><circle cx="50" cy="60" r="18" fill="#f5d060" opacity=".9"/><circle cx="150" cy="40" r="10" fill="#f8e080" opacity=".7"/><circle cx="100" cy="80" r="6" fill="#fff" opacity=".8"/><circle cx="30" cy="100" r="4" fill="#fff" opacity=".6"/><circle cx="170" cy="90" r="5" fill="#fff" opacity=".7"/><path d="M0,200 Q50,180 100,200 Q150,220 200,200 L200,300 L0,300Z" fill="#1a3020"/><path d="M80,200 L90,80 L100,200Z" fill="#2a5a30" opacity=".8"/><path d="M85,200 L95,60 L105,200Z" fill="#1a4020" opacity=".9"/></svg>`},
+  {name:"모네 — 인상",painter:"클로드 모네",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#c0704a"/><rect x="0" y="0" width="200" height="150" fill="#d08050" opacity=".7"/><circle cx="80" cy="90" r="25" fill="#f0a040" opacity=".8"/><rect x="0" y="150" width="200" height="150" fill="#2a4a6a" opacity=".8"/><rect x="60" y="120" width="8" height="80" fill="#1a2a3a" opacity=".8"/><rect x="120" y="110" width="6" height="90" fill="#1a2a3a" opacity=".7"/></svg>`},
+  {name:"렘브란트 — 야경",painter:"렘브란트",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#1a1208"/><rect x="40" y="80" width="120" height="160" fill="#3a2810" opacity=".8"/><circle cx="100" cy="50" r="30" fill="#f0c040" opacity=".6"/><rect x="80" y="100" width="40" height="80" fill="#c09030" opacity=".5"/><circle cx="70" cy="130" r="8" fill="#e0a020" opacity=".7"/><circle cx="130" cy="140" r="6" fill="#d09020" opacity=".6"/></svg>`},
+  {name:"뭉크 — 절규",painter:"에드바르 뭉크",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="c4a" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c04020"/><stop offset="100%" stop-color="#804010"/></linearGradient></defs><rect width="200" height="300" fill="url(#c4a)"/><path d="M0,80 Q50,60 100,90 Q150,120 200,80" stroke="#d06030" stroke-width="8" fill="none"/><path d="M0,110 Q50,90 100,120 Q150,150 200,110" stroke="#b04020" stroke-width="6" fill="none"/><path d="M80,120 Q100,100 120,120 Q115,160 100,180 Q85,160 80,120Z" fill="#f0e0c0"/><circle cx="93" cy="135" r="4" fill="#1a0a00"/><circle cx="107" cy="135" r="4" fill="#1a0a00"/></svg>`},
+  {name:"보티첼리 — 비너스",painter:"산드로 보티첼리",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="c5a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#87ceeb"/><stop offset="60%" stop-color="#4a90c0"/><stop offset="100%" stop-color="#2a6090"/></linearGradient></defs><rect width="200" height="300" fill="url(#c5a)"/><ellipse cx="100" cy="100" rx="35" ry="45" fill="#f5e6d0"/><path d="M65,130 Q100,120 135,130 L145,220 Q100,240 55,220Z" fill="#f0d8b0" opacity=".9"/><path d="M50,80 Q40,40 80,30 Q100,25 120,30 Q160,40 150,80" fill="#d4a030" opacity=".4"/></svg>`},
+  {name:"클림트 — 키스",painter:"구스타프 클림트",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#c8900a"/><rect x="0" y="0" width="200" height="300" fill="#d4a020" opacity=".5"/><circle cx="100" cy="100" r="55" fill="#e8c040" opacity=".6"/><circle cx="85" cy="85" r="12" fill="#f0e8d0" opacity=".9"/><circle cx="115" cy="100" r="14" fill="#f0e0c0" opacity=".8"/><rect x="20" y="20" width="8" height="8" fill="#f0c000" opacity=".6" rx="2"/><rect x="160" y="50" width="6" height="6" fill="#f0c000" opacity=".5" rx="1"/><rect x="40" y="200" width="10" height="10" fill="#f0c000" opacity=".4" rx="2"/><rect x="150" y="220" width="7" height="7" fill="#f0c000" opacity=".5" rx="1"/></svg>`},
+  {name:"터너 — 테메레르",painter:"J.M.W. 터너",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="c7a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0c080"/><stop offset="50%" stop-color="#e08040"/><stop offset="100%" stop-color="#4a6080"/></linearGradient></defs><rect width="200" height="300" fill="url(#c7a)"/><circle cx="60" cy="100" r="30" fill="#f0a000" opacity=".7"/><rect x="0" y="180" width="200" height="120" fill="#2a4060" opacity=".8"/><path d="M30,180 L35,120 L45,180Z" fill="#1a2030" opacity=".7"/><path d="M150,180 L155,100 L165,180Z" fill="#1a2030" opacity=".6"/></svg>`},
+  {name:"밀레이 — 오필리아",painter:"존 에버렛 밀레이",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#2a5a30"/><rect x="0" y="150" width="200" height="150" fill="#3a7a40" opacity=".7"/><ellipse cx="100" cy="190" rx="80" ry="25" fill="#4a8a50" opacity=".6"/><ellipse cx="100" cy="185" rx="50" ry="15" fill="#c8e0d0" opacity=".5"/><circle cx="60" cy="175" r="5" fill="#f0c0c0" opacity=".7"/><circle cx="140" cy="180" r="4" fill="#f0d0b0" opacity=".6"/><circle cx="100" cy="170" r="3" fill="#fff" opacity=".5"/></svg>`},
+  {name:"베르메르 — 진주",painter:"요하네스 베르메르",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#1a1408"/><rect x="30" y="40" width="140" height="180" fill="#2a2010" opacity=".5"/><ellipse cx="100" cy="110" rx="45" ry="55" fill="#e8d0b0"/><circle cx="120" cy="145" r="5" fill="#e0e8f0" opacity=".9"/><rect x="30" y="40" width="60" height="80" fill="#3a7090" opacity=".3"/></svg>`},
+  {name:"들라크루아 — 자유",painter:"외젠 들라크루아",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="c10a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8090c0"/><stop offset="100%" stop-color="#504060"/></linearGradient></defs><rect width="200" height="300" fill="url(#c10a)"/><path d="M0,200 L200,200 L200,300 L0,300Z" fill="#3a2010"/><path d="M60,200 L75,100 L90,200Z" fill="#1a0a00" opacity=".8"/><circle cx="120" cy="80" r="10" fill="#f0c000" opacity=".8"/><rect x="115" y="80" width="3" height="60" fill="#8a6000" opacity=".7"/></svg>`},
+  {name:"쇠라 — 그랑자트",painter:"조르주 쇠라",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#70a848"/><rect x="0" y="200" width="200" height="100" fill="#4a9ab0" opacity=".7"/><circle cx="50" cy="80" r="30" fill="#2a6020" opacity=".8"/><circle cx="160" cy="100" r="25" fill="#3a7030" opacity=".7"/><rect x="70" y="130" width="6" height="70" fill="#2a4018" opacity=".8"/><ellipse cx="73" cy="125" rx="15" ry="20" fill="#3a6028" opacity=".7"/></svg>`},
+  {name:"고야 — 개",painter:"프란시스코 고야",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="c12a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8b890"/><stop offset="100%" stop-color="#807050"/></linearGradient></defs><rect width="200" height="300" fill="url(#c12a)"/><ellipse cx="100" cy="230" rx="80" ry="30" fill="#706050" opacity=".6"/><ellipse cx="95" cy="215" rx="20" ry="25" fill="#3a2810" opacity=".8"/><circle cx="95" cy="200" r="12" fill="#4a3018" opacity=".9"/><circle cx="90" cy="196" r="3" fill="#1a0a00"/></svg>`},
+  {name:"르누아르 — 무도회",painter:"피에르-오귀스트 르누아르",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#8a6840"/><circle cx="60" cy="60" r="15" fill="#f0e040" opacity=".5"/><circle cx="140" cy="50" r="12" fill="#f0e040" opacity=".4"/><circle cx="100" cy="80" r="10" fill="#f0e040" opacity=".3"/><ellipse cx="70" cy="170" rx="25" ry="35" fill="#d0a0c0" opacity=".7"/><ellipse cx="130" cy="165" rx="22" ry="38" fill="#c080a0" opacity=".6"/><ellipse cx="70" cy="130" rx="15" ry="20" fill="#e8d0b8" opacity=".8"/><ellipse cx="130" cy="125" rx="13" ry="18" fill="#e8c8a8" opacity=".7"/></svg>`},
+  {name:"피사로 — 몽마르트",painter:"카미유 피사로",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="c14a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c0c8d8"/><stop offset="100%" stop-color="#a0a8b8"/></linearGradient></defs><rect width="200" height="300" fill="url(#c14a)"/><rect x="0" y="150" width="200" height="150" fill="#706858"/><rect x="20" y="100" width="30" height="80" fill="#807060" opacity=".8"/><rect x="70" y="90" width="35" height="90" fill="#786858" opacity=".7"/><rect x="130" y="105" width="28" height="75" fill="#807060" opacity=".8"/><rect x="85" y="50" width="4" height="60" fill="#3a3020" opacity=".7"/><ellipse cx="87" cy="45" rx="12" ry="18" fill="#4a6030" opacity=".6"/></svg>`},
+  {name:"카유보트 — 빗속의 파리",painter:"귀스타브 카유보트",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#808890"/><rect x="0" y="200" width="200" height="100" fill="#909898" opacity=".8"/><rect x="30" y="50" width="40" height="180" fill="#606870" opacity=".7"/><rect x="130" y="40" width="35" height="190" fill="#585e66" opacity=".6"/><ellipse cx="70" cy="60" rx="35" ry="5" fill="#303840" opacity=".5"/><ellipse cx="145" cy="50" rx="30" ry="4" fill="#303840" opacity=".4"/><ellipse cx="70" cy="150" rx="18" ry="25" fill="#a09888" opacity=".7"/><ellipse cx="145" cy="140" rx="15" ry="28" fill="#988878" opacity=".6"/></svg>`},
+  {name:"반 에이크 — 초상",painter:"얀 반 에이크",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#2a2010"/><rect x="20" y="20" width="160" height="260" fill="#1a3820" opacity=".4"/><ellipse cx="80" cy="130" rx="22" ry="28" fill="#e8d0b0"/><ellipse cx="130" cy="140" rx="20" ry="26" fill="#e0c8a8"/><rect x="60" y="155" width="40" height="80" fill="#3a2808" opacity=".9"/><rect x="110" y="163" width="38" height="75" fill="#2a1800" opacity=".8"/><circle cx="80" cy="85" r="14" fill="#1a0800"/><circle cx="130" cy="82" r="12" fill="#1a0800"/></svg>`},
+  {name:"호머 — 파란 보트",painter:"윈슬로 호머",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="c17a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#70a8c8"/><stop offset="100%" stop-color="#3a6888"/></linearGradient></defs><rect width="200" height="300" fill="url(#c17a)"/><path d="M20,200 Q100,180 180,200 L175,240 Q100,250 25,240Z" fill="#2a60c0"/><rect x="95" y="130" width="3" height="80" fill="#4a3010"/><path d="M98,130 L140,155 L98,160Z" fill="#f0e8d0" opacity=".8"/></svg>`},
+  {name:"카라바조 — 만찬",painter:"카라바조",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#0a0800"/><rect x="20" y="100" width="160" height="100" fill="#c08030" opacity=".2"/><ellipse cx="60" cy="155" rx="20" ry="26" fill="#e8c898" opacity=".9"/><ellipse cx="100" cy="148" rx="22" ry="28" fill="#f0d0a0" opacity=".95"/><ellipse cx="145" cy="157" rx="19" ry="24" fill="#e8c090" opacity=".85"/><rect x="30" y="200" width="140" height="10" fill="#604020" opacity=".7"/><circle cx="70" cy="50" r="15" fill="#f0c040" opacity=".4"/></svg>`},
+  {name:"브뤼헐 — 사냥꾼",painter:"피터르 브뤼헐",
+   svg:`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="300" fill="#c8d4b0"/><rect x="0" y="150" width="200" height="150" fill="#e0e8d0" opacity=".8"/><circle cx="40" cy="80" r="25" fill="#2a4a18" opacity=".8"/><circle cx="100" cy="70" r="20" fill="#3a5a20" opacity=".7"/><circle cx="165" cy="90" r="22" fill="#2a4a18" opacity=".8"/><path d="M10,140 L30,100 L50,140Z" fill="#1a3010" opacity=".7"/><path d="M60,150 L80,110 L100,150Z" fill="#243818" opacity=".8"/><path d="M80,200 L60,160 L40,200Z" fill="#0a2008" opacity=".6"/></svg>`},
+];
+
+// ─── 도서 데이터 ───
+const SUMMARIES=[
+  "삶의 본질적 고독과 인간 실존의 문제를 날카롭게 파헤친 불멸의 고전.",
+  "격동의 시대를 살아간 인물들의 내면세계를 세밀하게 묘사한 작품.",
+  "사회의 모순과 인간의 욕망이 충돌하는 서사를 통해 보편적 진실을 추구한다.",
+  "한 개인의 성장과 각성을 섬세하게 그린 서사. 시대를 초월하는 감동.",
+  "위기의 시대에 인간이 어떻게 존엄을 지키는가를 탐구한 작품.",
+  "복잡한 사회 구조 속 개인의 자유와 억압을 탐색한 소설.",
+  "아름다운 문체와 깊은 철학적 사유가 어우러진 작품.",
+  "인류 보편의 사랑과 상실을 그린 서사. 삶의 의미를 되묻게 한다.",
+  "역사의 거대한 흐름 속에서 개인의 선택과 책임을 묻는 소설.",
+  "부조리한 세계 앞에 선 인간의 저항과 연대를 그린 작품.",
+];
+
+const KW_POOL=[
+  ["고독","실존","자유"],["사랑","운명","상실"],["전쟁","구원","도덕"],
+  ["혁명","권력","저항"],["가족","기억","시간"],["신앙","이성","진실"],
+  ["자연","문명","예술"],["여성","사회","탈출"],["철학","선악","의지"],
+  ["영웅","비극","탐구"],
+];
+
+const GENRES=["실존주의","심리소설","사실주의","낭만주의","자연주의","모더니즘","성장소설","역사소설","철학","서사시","비극","사회소설","고딕소설","우화","부조리문학","의식의흐름","마법적사실주의","반유토피아","풍자","고백소설"];
+
+const BASE_BOOKS=[
+  {title:"이방인",author:"알베르 카뮈",genre:"실존주의",rating:5,year:1942,pages:159,summary:"태양 아래 저지른 살인. 뫼르소를 통해 인간 실존의 부조리를 날카롭게 파헤친 20세기 최고의 문제작.",keywords:["부조리","고독","자유","죽음"]},
+  {title:"페스트",author:"알베르 카뮈",genre:"실존주의",rating:5,year:1947,pages:308,summary:"전염병으로 봉쇄된 도시 오랑. 재난 앞에 선 인간의 연대와 저항을 그린 불멸의 서사.",keywords:["재난","연대","저항","희망"]},
+  {title:"시시포스 신화",author:"알베르 카뮈",genre:"철학",rating:5,year:1942,pages:212,summary:"삶은 부조리하다. 그럼에도 우리는 행복해야 한다. 카뮈 철학의 핵심을 담은 에세이.",keywords:["부조리","철학","행복","반항"]},
+  {title:"차라투스트라는 이렇게 말했다",author:"니체",genre:"철학",rating:5,year:1883,pages:352,summary:"신은 죽었다. 초인 사상과 영원회귀의 철학. 시적 산문으로 빚어낸 철학의 혁명.",keywords:["초인","철학","의지","신"]},
+  {title:"선악의 저편",author:"니체",genre:"철학",rating:4,year:1886,pages:264,summary:"도덕의 가면을 벗겨낸 니체의 날선 분석. 새로운 가치 창조를 향한 선언.",keywords:["도덕","가치","철학","비판"]},
+  {title:"도덕의 계보학",author:"니체",genre:"철학",rating:5,year:1887,pages:208,summary:"선과 악의 기원을 역사적으로 추적한다. 기독교 도덕을 해부하는 철학적 명저.",keywords:["도덕","역사","권력","죄"]},
+  {title:"죄와 벌",author:"도스토옙스키",genre:"심리소설",rating:5,year:1866,pages:551,summary:"완전범죄를 꿈꾼 대학생의 내면 지옥과 구원을 향한 처절한 여정.",keywords:["죄책감","구원","심리","사랑"]},
+  {title:"카라마조프가의 형제들",author:"도스토옙스키",genre:"심리소설",rating:5,year:1880,pages:796,summary:"신과 악마, 욕망과 윤리. 세 형제의 운명을 통해 인간 본성의 심연을 탐구한 최후 걸작.",keywords:["가족","신앙","자유","사랑"]},
+  {title:"백치",author:"도스토옙스키",genre:"심리소설",rating:5,year:1869,pages:634,summary:"완전히 선한 인간의 비극. 순수함이 세상과 충돌하며 빚어내는 처절하고 아름다운 서사.",keywords:["선의","비극","순수","사회"]},
+  {title:"지하로부터의 수기",author:"도스토옙스키",genre:"고백소설",rating:5,year:1864,pages:176,summary:"지하 인간의 자기고발. 자의식과 자유의지에 대한 신랄한 탐구.",keywords:["자의식","자유의지","고독","반항"]},
+  {title:"변신",author:"카프카",genre:"부조리문학",rating:5,year:1915,pages:80,summary:"어느 날 아침 벌레로 변한 그레고르 잠자. 소외와 부조리의 20세기 신화.",keywords:["소외","부조리","변화","가족"]},
+  {title:"심판",author:"카프카",genre:"부조리문학",rating:4,year:1925,pages:232,summary:"이유도 모른 채 체포된 요제프 K. 거대한 관료제 앞에 선 개인의 무력함.",keywords:["권력","부조리","관료주의","자유"]},
+  {title:"성",author:"카프카",genre:"부조리문학",rating:4,year:1926,pages:352,summary:"닿을 수 없는 권위와 소통 불능의 세계를 그린 카프카의 미완성 대작.",keywords:["권위","소통","부조리","좌절"]},
+  {title:"댈러웨이 부인",author:"버지니아 울프",genre:"의식의흐름",rating:5,year:1925,pages:194,summary:"런던의 하루, 한 여인의 내면 풍경. 의식의 흐름으로 포착한 삶과 죽음의 교차.",keywords:["여성","기억","내면","죽음"]},
+  {title:"등대로",author:"버지니아 울프",genre:"의식의흐름",rating:5,year:1927,pages:224,summary:"언제쯤 등대에 갈 수 있을까. 시간과 의식, 예술과 삶을 탐구한 모더니즘의 정점.",keywords:["시간","예술","의식","가족"]},
+  {title:"위대한 개츠비",author:"스콧 피츠제럴드",genre:"비극",rating:5,year:1925,pages:180,summary:"녹색 불빛을 향해 손을 뻗는 개츠비. 아메리칸 드림의 허망함을 노래한 비가.",keywords:["꿈","사랑","계층","허망"]},
+  {title:"전쟁과 평화",author:"레프 톨스토이",genre:"역사소설",rating:5,year:1869,pages:1225,summary:"나폴레옹 전쟁을 배경으로 귀족 가문들의 운명을 그린 대서사시.",keywords:["전쟁","사랑","역사","운명"]},
+  {title:"안나 카레니나",author:"레프 톨스토이",genre:"사실주의",rating:5,year:1878,pages:864,summary:"사랑 때문에 모든 것을 잃은 여인의 비극. 사회 관습과 열정이 충돌하는 이야기.",keywords:["사랑","비극","사회","자유"]},
+  {title:"레 미제라블",author:"빅토르 위고",genre:"사회소설",rating:5,year:1862,pages:1463,summary:"장 발장의 긴 구원의 여정. 19세기 프랑스 사회의 모순을 담은 인도주의 소설.",keywords:["구원","정의","사랑","혁명"]},
+  {title:"마담 보바리",author:"귀스타브 플로베르",genre:"사실주의",rating:5,year:1857,pages:329,summary:"낭만적 환상을 쫓다 파멸한 시골 의사의 아내. 욕망과 권태를 해부한 사실주의 명작.",keywords:["욕망","환상","비극","결혼"]},
+  {title:"목로주점",author:"에밀 졸라",genre:"자연주의",rating:5,year:1877,pages:376,summary:"술과 가난이 한 여인의 삶을 파괴하는 과정. 노동계급의 비극을 그린 졸라의 대표작.",keywords:["빈곤","노동","비극","사회"]},
+  {title:"적과 흑",author:"스탕달",genre:"사실주의",rating:5,year:1830,pages:504,summary:"야심찬 청년 줄리앵 소렐의 상승과 몰락. 프랑스 사회를 해부한 심리소설의 고전.",keywords:["야망","사랑","계층","비극"]},
+  {title:"고리오 영감",author:"오노레 드 발자크",genre:"사실주의",rating:5,year:1835,pages:304,summary:"딸들을 위해 모든 것을 희생한 아버지의 비극. 파리 사회의 냉혹한 현실을 파헤친다.",keywords:["희생","가족","계층","비극"]},
+  {title:"몬테크리스토 백작",author:"알렉상드르 뒤마",genre:"역사소설",rating:5,year:1844,pages:1276,summary:"억울한 누명으로 감옥에 갇힌 청년의 화려한 복수극. 정의 실현의 통쾌한 서사.",keywords:["복수","정의","배신","변신"]},
+  {title:"두 도시 이야기",author:"찰스 디킨스",genre:"역사소설",rating:5,year:1859,pages:448,summary:"프랑스 혁명을 배경으로 한 사랑과 희생의 이야기. 부활의 테마를 웅장하게 펼친다.",keywords:["혁명","사랑","희생","역사"]},
+  {title:"위대한 유산",author:"찰스 디킨스",genre:"성장소설",rating:5,year:1861,pages:544,summary:"고아 소년 핍의 성장과 각성. 신분 상승의 꿈과 진정한 신사도의 의미를 탐구한다.",keywords:["성장","계층","사랑","정체성"]},
+  {title:"오만과 편견",author:"제인 오스틴",genre:"사실주의",rating:5,year:1813,pages:432,summary:"엘리자베스 베넷과 다아시의 사랑 이야기. 재치 있는 사회 비판이 담긴 영문학의 보석.",keywords:["사랑","계층","오만","결혼"]},
+  {title:"제인 에어",author:"샬럿 브론테",genre:"성장소설",rating:5,year:1847,pages:532,summary:"고아 소녀 제인 에어의 성장과 사랑. 독립적이고 강인한 여성상을 그린 혁명적 소설.",keywords:["독립","사랑","자아","비밀"]},
+  {title:"폭풍의 언덕",author:"에밀리 브론테",genre:"낭만주의",rating:5,year:1847,pages:348,summary:"히스클리프와 캐서린의 격렬하고 파괴적인 사랑. 고딕 낭만주의의 최고봉.",keywords:["사랑","복수","열정","비극"]},
+  {title:"파우스트",author:"요한 볼프강 폰 괴테",genre:"서사시",rating:5,year:1808,pages:512,summary:"악마와 계약을 맺은 박사 파우스트의 이야기. 인간의 무한한 욕망과 구원을 담은 독일 문학의 최고봉.",keywords:["욕망","구원","지식","인간"]},
+  {title:"젊은 베르테르의 슬픔",author:"요한 볼프강 폰 괴테",genre:"서간체소설",rating:5,year:1774,pages:176,summary:"이룰 수 없는 사랑에 절망한 청년의 편지. 낭만주의 소설의 선구작.",keywords:["사랑","절망","청춘","낭만"]},
+  {title:"마의 산",author:"토마스 만",genre:"모더니즘",rating:5,year:1924,pages:720,summary:"스위스 요양원에서 7년을 보낸 인물의 이야기. 시간과 죽음, 유럽 문명의 위기를 탐구한 대작.",keywords:["시간","죽음","문명","이념"]},
+  {title:"모비 딕",author:"허먼 멜빌",genre:"서사",rating:5,year:1851,pages:635,summary:"흰 고래를 향한 선장의 집착과 파멸. 인간의 오만과 자연의 압도적 힘을 그린 미국 문학의 금자탑.",keywords:["집착","자연","오만","모험"]},
+  {title:"주홍 글씨",author:"나다니엘 호손",genre:"심리소설",rating:5,year:1850,pages:279,summary:"간통의 죄로 주홍 글씨를 달고 살아야 하는 여인의 이야기. 죄와 구원을 탐구한다.",keywords:["죄","구원","사회","위선"]},
+  {title:"오만과 편견",author:"제인 오스틴",genre:"사실주의",rating:5,year:1813,pages:432,summary:"재치와 사랑, 계층의 이야기. 200년이 지나도 빛나는 영문학의 보석.",keywords:["사랑","결혼","사회","성장"]},
+  {title:"1984",author:"조지 오웰",genre:"반유토피아",rating:5,year:1949,pages:328,summary:"빅 브라더가 지배하는 전체주의 사회. 사상 통제와 개인 자유의 말살을 그린 예언적 걸작.",keywords:["전체주의","자유","감시","저항"]},
+  {title:"동물 농장",author:"조지 오웰",genre:"우화",rating:5,year:1945,pages:112,summary:"농장 동물들의 혁명이 새로운 독재로 변질되는 과정. 소련 전체주의를 풍자한 정치 우화.",keywords:["혁명","권력","부패","풍자"]},
+  {title:"호밀밭의 파수꾼",author:"J.D. 샐린저",genre:"성장소설",rating:5,year:1951,pages:277,summary:"학교에서 쫓겨난 홀든 콜필드의 뉴욕 방랑. 청춘의 반항과 순수에 대한 갈망.",keywords:["반항","순수","청춘","소외"]},
+  {title:"백년의 고독",author:"가브리엘 가르시아 마르케스",genre:"마법적사실주의",rating:5,year:1967,pages:417,summary:"마콘도 마을 부엔디아 가문 100년의 역사. 마법적 사실주의의 정수.",keywords:["시간","가족","고독","마법"]},
+  {title:"돈 키호테",author:"세르반테스",genre:"풍자",rating:5,year:1605,pages:1023,summary:"이상을 현실로 착각한 기사의 방랑. 세계 최초의 근대 소설로 평가받는 걸작.",keywords:["이상","현실","광기","우정"]},
+  {title:"신곡 — 지옥편",author:"단테",genre:"서사시",rating:5,year:1320,pages:432,summary:"지옥과 연옥, 천국을 여행하는 서사시. 중세 기독교 세계관의 집대성.",keywords:["지옥","구원","신앙","상징"]},
+  {title:"오디세이",author:"호메로스",genre:"서사시",rating:5,year:-800,pages:541,summary:"트로이 전쟁 후 고향으로 돌아가는 오디세우스의 10년 항해. 인간의 지혜와 인내를 노래한 서사시.",keywords:["귀향","모험","지혜","신화"]},
+  {title:"설국",author:"가와바타 야스나리",genre:"서정소설",rating:5,year:1948,pages:175,summary:"눈 덮인 온천 마을에서 피어나는 허무한 사랑. 일본 미의식의 정수.",keywords:["아름다움","허무","사랑","자연"]},
+  {title:"금각사",author:"미시마 유키오",genre:"심리소설",rating:5,year:1956,pages:262,summary:"아름다움을 소유하기 위해 불을 지른 청년의 이야기. 미와 파괴의 역설을 극한까지 추구한다.",keywords:["아름다움","파괴","집착","미학"]},
+  {title:"멋진 신세계",author:"올더스 헉슬리",genre:"반유토피아",rating:5,year:1932,pages:311,summary:"행복을 강요당하는 미래 사회. 인간성의 의미를 묻는 디스토피아 소설.",keywords:["미래","통제","행복","자유"]},
+  {title:"프랑켄슈타인",author:"메리 셸리",genre:"고딕소설",rating:5,year:1818,pages:280,summary:"창조와 피조물의 비극. 과학의 오만함과 책임을 다룬 SF 문학의 원조.",keywords:["창조","책임","고독","괴물"]},
+  {title:"드라큘라",author:"브램 스토커",genre:"고딕소설",rating:4,year:1897,pages:418,summary:"흡혈귀 드라큘라 백작의 공포를 서간체로 그린 빅토리아 시대 고딕 소설.",keywords:["공포","선악","죽음","비밀"]},
+  {title:"보물섬",author:"로버트 루이스 스티븐슨",genre:"모험소설",rating:5,year:1883,pages:292,summary:"보물 지도를 따라 떠나는 소년의 해적 모험. 모험 소설 장르의 전형.",keywords:["모험","보물","해적","성장"]},
+  {title:"지킬 박사와 하이드",author:"로버트 루이스 스티븐슨",genre:"고딕소설",rating:5,year:1886,pages:144,summary:"한 인간 안에 공존하는 선과 악. 이중 자아를 공포 서사로 구현한 빅토리아 시대 걸작.",keywords:["이중성","선악","과학","자아"]},
+  {title:"걸리버 여행기",author:"조너선 스위프트",genre:"풍자",rating:5,year:1726,pages:336,summary:"소인국과 거인국을 여행하는 걸리버의 모험. 인간 본성과 사회를 통렬하게 풍자한다.",keywords:["풍자","사회","모험","정치"]},
+  {title:"로빈슨 크루소",author:"다니엘 디포",genre:"서사",rating:5,year:1719,pages:320,summary:"무인도에 표류한 한 남자의 생존과 문명 재건 이야기. 근대 소설의 효시.",keywords:["생존","문명","고독","모험"]},
+  {title:"구토",author:"장-폴 사르트르",genre:"실존주의",rating:5,year:1938,pages:253,summary:"존재의 근원적 불안. 실존주의 철학을 소설로 구현한 사르트르의 데뷔작.",keywords:["실존","부조리","자유","불안"]},
+  {title:"파도",author:"버지니아 울프",genre:"의식의흐름",rating:5,year:1931,pages:229,summary:"여섯 인물의 내면 독백이 파도처럼 교차하는 실험적 소설. 의식과 언어의 경계를 탐색한다.",keywords:["의식","언어","존재","우정"]},
+  {title:"아버지와 아들",author:"이반 투르게네프",genre:"사회소설",rating:5,year:1862,pages:272,summary:"보수와 진보, 두 세대의 갈등을 그린 소설. 허무주의자 바자로프라는 획기적 인물.",keywords:["세대갈등","허무주의","사랑","변화"]},
+  {title:"목로주점",author:"에밀 졸라",genre:"자연주의",rating:4,year:1877,pages:376,summary:"파리 노동자 구역에서 술과 가난이 가정을 파괴하는 자연주의 소설.",keywords:["빈곤","노동","가족","사회"]},
+  {title:"인간의 굴레에서",author:"W. 서머싯 몸",genre:"성장소설",rating:5,year:1915,pages:648,summary:"선천성 기형을 가진 필립 케리의 성장 이야기. 삶의 의미와 자유를 향한 긴 여정.",keywords:["성장","사랑","자유","고통"]},
+  {title:"달과 6펜스",author:"W. 서머싯 몸",genre:"사실주의",rating:5,year:1919,pages:240,summary:"안정된 삶을 버리고 예술을 위해 타히티로 간 화가 이야기. 예술과 욕망의 서사.",keywords:["예술","자유","열정","탈출"]},
+  {title:"연금술사",author:"파울로 코엘료",genre:"우화",rating:4,year:1988,pages:197,summary:"자신의 운명을 찾아 떠나는 양치기 소년의 여행. 전 세계 독자를 사로잡은 현대의 우화.",keywords:["꿈","운명","여행","발견"]},
+  {title:"파리대왕",author:"윌리엄 골딩",genre:"우화",rating:5,year:1954,pages:224,summary:"무인도에 갇힌 소년들이 야만으로 퇴행하는 과정. 인간 본성의 어두운 면을 파헤친 우화.",keywords:["인간본성","야만","권력","문명"]},
+  {title:"콜레라 시대의 사랑",author:"가브리엘 가르시아 마르케스",genre:"마법적사실주의",rating:5,year:1985,pages:348,summary:"51년을 기다려 이룬 사랑. 사랑의 증상과 질병의 증상이 교차하는 서정적 로맨스.",keywords:["사랑","기다림","시간","열정"]},
+  {title:"미들마치",author:"조지 엘리엇",genre:"사실주의",rating:5,year:1872,pages:880,summary:"19세기 영국 지방 도시의 삶. 여러 인물의 교차로 인간과 사회를 입체적으로 그린다.",keywords:["사회","사랑","결혼","현실"]},
+  {title:"부덴브로크 가의 사람들",author:"토마스 만",genre:"사실주의",rating:5,year:1901,pages:736,summary:"부유한 상인 가문 4대의 흥망성쇠. 예술과 상업, 삶과 죽음의 갈등을 담은 노벨상 수상작.",keywords:["가족","몰락","예술","시간"]},
+];
+
+// 추가 도서 생성 (총 500권 이상)
+const PFXS=["고독한","어두운","빛나는","잃어버린","되찾은","침묵의","폭풍의","황혼의","새벽의","영원한","덧없는","낯선","깊은","먼","마지막","첫번째","사라진","숨겨진","열린","닫힌","붉은","창백한","고요한","흔들리는","무너진"];
+const NOUNS=["밤","낮","도시","바다","산","강","들판","집","방","거리","시간","기억","꿈","목소리","그림자","빛","어둠","사랑","삶","여행","귀환","시작","끝","문","창문","거울","서재","정원","언덕","숲","호수","별","계절","발걸음","편지"];
+const EXTRA_AUTHORS=["헨리 제임스","이디스 워튼","잭 런던","윌리엄 포크너","어니스트 헤밍웨이","존 스타인벡","레이먼드 카버","플래너리 오코너","트루먼 카포티","필립 로스","솔 벨로우","알베르토 모라비아","이탈로 스베보","루이지 피란델로","훌리오 코르타사르","호르헤 루이스 보르헤스","카를로스 푸엔테스","마리오 바르가스 요사","이사벨 아옌데","로베르토 볼라뇨","기 드 모파상","아나톨 프랑스","테오도르 폰타네","아르투르 슈니츨러","로베르트 무질","헤르만 브로흐","엘리아스 카네티","아우구스트 스트린드베리","카렌 블릭센","요한나 스파이리","알프레트 되블린","나쓰메 소세키","아쿠타가와 류노스케","탄자키 준이치로","오에 겐자부로","무라카미 하루키","안데르센","세르반테스","보카치오","마키아벨리","에라스뮈스","토머스 모어","미셸 드 몽테뉴","존 밀턴","새뮤얼 존슨","올리버 골드스미스","헨리 필딩","새뮤얼 리처드슨"];
+
+const BOOKS=[...BASE_BOOKS];
+const usedSet=new Set(BASE_BOOKS.map(b=>b.title+b.author));
+let idx=0;
+while(BOOKS.length<520){
+  const pfx=PFXS[idx%PFXS.length];
+  const noun=NOUNS[(idx*7+3)%NOUNS.length];
+  const title=`${pfx} ${noun}`;
+  const auth=EXTRA_AUTHORS[idx%EXTRA_AUTHORS.length];
+  const key=title+auth;
+  if(!usedSet.has(key)){
+    usedSet.add(key);
+    const g=GENRES[idx%GENRES.length];
+    const kw=KW_POOL[idx%KW_POOL.length];
+    BOOKS.push({
+      title,author:auth,genre:g,
+      rating:[3,4,4,5,5][idx%5],
+      year:1800+(idx*11%180),
+      pages:120+(idx*17%600),
+      summary:SUMMARIES[idx%SUMMARIES.length],
+      keywords:kw
+    });
+  }
+  idx++;
+}
+
+BOOKS.forEach((b,i)=>{b.id=i;b.cover=COVERS[i%COVERS.length]});
+
+document.getElementById('totalCount').textContent=BOOKS.length.toLocaleString();
+
+// ─── 렌더 함수 ───
+const ALL_AUTHORS=[...new Set(BOOKS.map(b=>b.author))].sort();
+const ALL_GENRES=[...new Set(BOOKS.map(b=>b.genre))].sort();
+
+let activePanel='books',activeAuthor=null,activeGenre=null,searchQ='';
+
+const PANEL_TITLES={books:'도서 큐레이션',recommended:'이달의 추천',reviews:'독서 후기',talk:'잡담 · 수다',column:'에세이 · 칼럼',readinglist:'읽고 싶은 책',genres:'장르별 탐색',authors:'작가별 탐색'};
+
+function stars(n){return Array.from({length:5},(_,i)=>`<span style="color:${i<n?'#C8973A':'#ccc'}">${i<n?'★':'☆'}</span>`).join('')}
+
+function coverHTML(book){
+  return `<div class="cover-art">${book.cover.svg}</div><div class="cover-overlay"></div><div class="cover-title">${book.title}</div>`;
+}
+
+function makeCard(book){
+  const el=document.createElement('article');
+  el.className='book-card';
+  el.tabIndex=0;
+  el.innerHTML=`<div class="book-cover">${coverHTML(book)}</div><div class="card-body"><div class="card-author">${book.author}</div><div class="card-genre">${book.genre}</div><div class="card-stars">${stars(book.rating)}</div></div>`;
+  el.onclick=()=>openModal(book);
+  el.onkeydown=e=>{if(e.key==='Enter')openModal(book)};
+  return el;
+}
+
+function fillGrid(id,list){
+  const g=document.getElementById(id);
+  g.innerHTML='';
+  list.forEach(b=>g.appendChild(makeCard(b)));
+}
+
+// BOOKS panel
+function buildFilters(){
+  const aBar=document.getElementById('authorBar');
+  const gBar=document.getElementById('genreBar');
+  aBar.innerHTML='<span class="filter-label">작가</span>';
+  gBar.innerHTML='<span class="filter-label">장르</span>';
+  const aAll=mkFBtn('전체',true,()=>{activeAuthor=null;setActive(aBar,aAll);applyFilters()});
+  aBar.appendChild(aAll);
+  ALL_AUTHORS.slice(0,30).forEach(a=>{const b=mkFBtn(a,false,()=>{activeAuthor=a;setActive(aBar,b);applyFilters()});aBar.appendChild(b)});
+  const gAll=mkFBtn('전체',true,()=>{activeGenre=null;setActive(gBar,gAll);applyFilters()});
+  gBar.appendChild(gAll);
+  ALL_GENRES.forEach(g=>{const b=mkFBtn(g,false,()=>{activeGenre=g;setActive(gBar,b);applyFilters()});gBar.appendChild(b)});
+}
+function mkFBtn(txt,active,cb){const b=document.createElement('button');b.className='fbtn'+(active?' active':'');b.textContent=txt;b.onclick=cb;return b}
+function setActive(bar,btn){bar.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+
+function applyFilters(){
+  let res=BOOKS;
+  if(activeAuthor)res=res.filter(b=>b.author===activeAuthor);
+  if(activeGenre)res=res.filter(b=>b.genre===activeGenre);
+  if(searchQ){const q=searchQ.toLowerCase();res=res.filter(b=>b.title.toLowerCase().includes(q)||b.author.toLowerCase().includes(q)||b.genre.toLowerCase().includes(q)||(b.keywords&&b.keywords.some(k=>k.toLowerCase().includes(q))))}
+  document.getElementById('resultsInfo').textContent=`${res.length.toLocaleString()}권의 도서`;
+  document.getElementById('emptyState').style.display=res.length?'none':'block';
+  fillGrid('bookGrid',res);
+}
+
+// Modal
+function openModal(book){
+  document.getElementById('modalArt').innerHTML=book.cover.svg;
+  document.getElementById('modalBody').innerHTML=`
+    <button class="modal-close" id="modalClose">×</button>
+    <span class="modal-genre">${book.genre}</span>
+    <h2 class="modal-title">${book.title}</h2>
+    <p class="modal-author">${book.author}${book.year?` · ${book.year<0?Math.abs(book.year)+'BC':book.year}년`:''}${book.pages?` · ${book.pages}p`:''}</p>
+    <div class="modal-stars">${stars(book.rating)} <span style="font-size:13px;color:var(--text3);margin-left:6px">${book.rating}.0 / 5</span></div>
+    <div class="modal-meta-row">
+      <div class="meta-item"><div class="val">${book.rating}.0</div><div class="lbl">평점</div></div>
+      ${book.pages?`<div class="meta-item"><div class="val">${book.pages}p</div><div class="lbl">분량</div></div>`:''}
+      ${book.year?`<div class="meta-item"><div class="val">${book.year<0?Math.abs(book.year)+'BC':book.year}</div><div class="lbl">출판</div></div>`:''}
+    </div>
+    <p class="sec-title">줄거리</p>
+    <p class="modal-summary">${book.summary}</p>
+    ${book.keywords?`<p class="sec-title">키워드</p><div class="kw-list">${book.keywords.map(k=>`<span class="kw"># ${k}</span>`).join('')}</div>`:''}
+    <p class="paint-credit">표지 그림 참조: 「${book.cover.name}」 — ${book.cover.painter}</p>`;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('modalClose').onclick=closeModal;
+  document.getElementById('modalOverlay').onclick=e=>{if(e.target===document.getElementById('modalOverlay'))closeModal()};
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+// Recommended
+function renderRecommended(){
+  const picks=[0,6,10,14,16,20,25,30,35,40,45,50].map(i=>BOOKS[i]).filter(Boolean);
+  fillGrid('recGrid',picks);
+}
+
+// Community posts
+const REVIEWS=[
+  {badge:'review',title:'『이방인』을 다시 읽으며 — 나이 들수록 더 선명해지는 부조리',excerpt:'처음 읽었을 땐 뫼르소가 이해되지 않았어요. 그런데 서른이 넘어 다시 읽으니, 그의 무감각함이 낯설지 않더라고요.',date:'2026.05.08',likes:47,comments:12},
+  {badge:'review',title:'『죄와 벌』 완독 후기 — 551페이지의 지옥과 구원',excerpt:'드디어 읽었습니다. 읽는 내내 숨이 막혔어요. 라스콜리니코프의 논리가 어느 순간 납득이 되기 시작해서 무서웠고...',date:'2026.05.06',likes:83,comments:28},
+  {badge:'review',title:'『오만과 편견』— 200년이 지나도 유효한 이야기',excerpt:'제인 오스틴이 풍자하는 당시 사회는 지금과 많이 닮아 있어요. 다아시의 편지 장면에서 울었습니다.',date:'2026.05.04',likes:61,comments:19},
+  {badge:'review',title:'『변신』재독 — 직장인으로 읽는 그레고르',excerpt:'취직 후에 다시 읽은 카프카는 완전히 달랐어요. 벌레가 된 그레고르를 보며 내 모습이 겹쳤습니다.',date:'2026.05.02',likes:94,comments:34},
+  {badge:'review',title:'『설국』의 여운 — 가와바타의 미의식에 대하여',excerpt:'눈 속의 풍경 묘사가 너무 아름다워서 몇 번을 다시 읽었어요.',date:'2026.04.30',likes:52,comments:15},
+];
+const TALKS=[
+  {badge:'talk',title:'고전 읽다가 졸음 오는 거 저만 그런가요 😅',excerpt:'도스토옙스키 읽다 두 번 잠들었는데 세 번째에 겨우 완독했습니다.',date:'2026.05.09',likes:127,comments:56},
+  {badge:'talk',title:'고전 읽기 좋은 카페 서울 추천해 주세요',excerpt:'혼자 오래 앉아 읽어도 눈치 안 받고, 조용하고, 커피 맛있는 곳... 어디 없을까요?',date:'2026.05.07',likes:89,comments:43},
+  {badge:'talk',title:'처음 고전 입문하기 좋은 책 추천 (얇은 거 환영)',excerpt:'고전 읽고 싶은데 벽돌책은 두려워요. 얇고 강렬한 것부터 시작하려는데 뭐가 좋을까요?',date:'2026.05.05',likes:154,comments:72},
+  {badge:'talk',title:'독서 슬럼프 탈출 어떻게 하세요?',excerpt:'2달째 책을 못 읽고 있어요. 들어도 안 들어오고, 이해도 안 되고...',date:'2026.05.01',likes:112,comments:58},
+];
+const COLUMNS=[
+  {badge:'column',title:'카뮈의 반항과 현재의 우리 — 부조리한 세계를 살아가는 법',excerpt:'카뮈는 자살하지 말고 반항하라고 했다. 그 반항이란 삶을 포기하지 않는 것이다.',date:'2026.05.08',likes:78,comments:24},
+  {badge:'column',title:'도스토옙스키는 왜 항상 고통받는 인물을 썼을까',excerpt:'도스토옙스키의 삶 자체가 고통의 연속이었다. 그 고통이 그의 소설 속에 생생히 살아있다.',date:'2026.05.05',likes:63,comments:18},
+  {badge:'column',title:'번역으로 읽는 고전의 한계와 가능성',excerpt:'같은 작품의 번역본이 여러 개일 때 어떤 것을 골라야 할까? 번역은 또 하나의 창작이다.',date:'2026.04.29',likes:45,comments:16},
+];
+const READINGS=[
+  {badge:'reading',title:'올해 반드시 읽겠다는 다짐 목록 공유해요',excerpt:'저는 『백년의 고독』, 『전쟁과 평화』, 『잃어버린 시간을 찾아서』가 목표입니다.',date:'2026.05.07',likes:96,comments:44},
+  {badge:'reading',title:'죽기 전에 꼭 읽어야 할 고전 100선 — 내 버전',excerpt:'각종 목록을 참고해서 제 취향대로 만든 100권 리스트를 공유합니다.',date:'2026.05.04',likes:134,comments:62},
+];
+
+const BADGE_LBL={review:'독서 후기',talk:'잡담',column:'칼럼',reading:'읽기 목록'};
+function renderPosts(id,posts){
+  const c=document.getElementById(id);c.innerHTML='';
+  posts.forEach(p=>{
+    const d=document.createElement('div');d.className='post-card';
+    d.innerHTML=`<div class="post-meta"><span class="badge ${p.badge}">${BADGE_LBL[p.badge]}</span><span class="post-date">${p.date}</span></div><div class="post-title">${p.title}</div><div class="post-excerpt">${p.excerpt}</div><div class="post-foot"><span>♥ ${p.likes}</span><span>💬 ${p.comments}</span></div>`;
+    c.appendChild(d);
+  });
+}
+
+// Genre / Author nav
+function renderGenreNav(){
+  const bar=document.getElementById('genreNavBar');
+  bar.innerHTML='';
+  let sel=ALL_GENRES[0];
+  ALL_GENRES.forEach((g,i)=>{
+    const b=mkFBtn(g,i===0,()=>{sel=g;setActive(bar,b);fillGrid('genreGrid',BOOKS.filter(bk=>bk.genre===g))});
+    bar.appendChild(b);
+  });
+  fillGrid('genreGrid',BOOKS.filter(bk=>bk.genre===sel));
+}
+function renderAuthorNav(){
+  const bar=document.getElementById('authorNavBar');
+  bar.innerHTML='';
+  let sel=ALL_AUTHORS[0];
+  ALL_AUTHORS.slice(0,35).forEach((a,i)=>{
+    const b=mkFBtn(a,i===0,()=>{sel=a;setActive(bar,b);fillGrid('authorGrid',BOOKS.filter(bk=>bk.author===a))});
+    bar.appendChild(b);
+  });
+  fillGrid('authorGrid',BOOKS.filter(bk=>bk.author===sel));
+}
+
+// Panel switch
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.querySelector(`[data-panel="${name}"]`).classList.add('active');
+  document.getElementById('panelTitle').textContent=PANEL_TITLES[name]||name;
+  activePanel=name;
+  if(name==='books'){buildFilters();applyFilters()}
+  if(name==='recommended')renderRecommended();
+  if(name==='reviews')renderPosts('reviewList',REVIEWS);
+  if(name==='talk')renderPosts('talkList',TALKS);
+  if(name==='column')renderPosts('columnList',COLUMNS);
+  if(name==='readinglist')renderPosts('readingList',READINGS);
+  if(name==='genres')renderGenreNav();
+  if(name==='authors')renderAuthorNav();
+}
+
+document.querySelectorAll('.nav-item').forEach(item=>{item.addEventListener('click',()=>showPanel(item.dataset.panel))});
+document.getElementById('searchInput').addEventListener('input',e=>{searchQ=e.target.value.trim();if(activePanel==='books')applyFilters()});
+
+// Init
+buildFilters();applyFilters();
+</script>
+</body>
+</html>
